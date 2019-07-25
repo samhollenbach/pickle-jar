@@ -78,20 +78,21 @@ class pickle_jar(object):
                     return self.to_cache(res, source)
             return self.reload_cache(func, source, *args,
                                      **kwargs)
-
+        self.output_path = None
         return new_func
 
 
     def clear_cache(self, cache_file=None):
         """
-        Removed cached file
+        Removed cached file or all files in cache directory
 
         :param str cache_file:
         :return: bool, if file removed
         """
         if not cache_file:
             if not self.output_filename:
-                return False
+                for filename in os.listdir(self.cache_dir):
+                    os.remove(os.path.join(self.cache_dir, filename))
             cache_file = f'{self.output_dir}/{self.output_filename}'
         try:
             return os.remove(cache_file)
@@ -166,7 +167,6 @@ class pickle_jar(object):
         :return: Tuple, (Cached function results, cached function source code)
         """
         with open(self.output_path, 'rb') as cache_file:
-            self.output_path = None
             return pickle.load(cache_file)
 
     def reload_cache(self, func, source, *args, **kwargs):
@@ -193,5 +193,4 @@ class pickle_jar(object):
         cache_entry = (res, source)
         with open(self.output_path, 'wb+') as wb:
             pickle.dump(cache_entry, wb)
-        self.output_path = None
         return res
