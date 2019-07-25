@@ -50,9 +50,9 @@ class TestPickleJar:
     def test_different_args(self, get_source):
         get_source.return_value = '@test\ntest_source\ntest_source'
         pj2 = pickle_jar(cache_dir='test/test_jar/', filename=None)
-        pj2.clear_cache()
         func = MagicMock(return_value='test')
         func.__name__ = 'func_name_mock'
+        pj2.clear_cache('func_name_mock')
         decorated_func = pj2(func)
 
         # First function run
@@ -64,7 +64,7 @@ class TestPickleJar:
         res2 = decorated_func('arg2')
         eq_(res2, 'test')
         assert func.call_count == 2
-        pj2.clear_cache()
+        pj2.clear_cache(func_name='func_name_mock')
 
 
     def test_changed_source(self, get_source):

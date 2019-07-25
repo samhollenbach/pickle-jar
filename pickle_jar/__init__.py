@@ -11,7 +11,7 @@ class pickle_jar(object):
     """
 
     def __init__(self, filename=None, reload=False, detect_changes=True,
-                 cache_dir='pickle_jar/jar', verbose=True, check_args=True):
+                 cache_dir='pickle_jar/jar', verbose=False, check_args=True):
         self.reload = reload
         self.cache_dir = cache_dir
         self.detect_changes = detect_changes
@@ -41,7 +41,7 @@ class pickle_jar(object):
                 output_args_str = f'_{self.get_args_hash(*args, **kwargs)}'
 
             # Get Output Path
-            self.output_path = self.get_output_path(output_args_str)
+            self.output_path = self.get_output_path(func, output_args_str)
 
             # Get function source code
             source = inspect.getsource(func)
@@ -82,22 +82,27 @@ class pickle_jar(object):
         return new_func
 
 
-    def clear_cache(self, cache_file=None):
+    def clear_cache(self, func_name=None, cache_file=None):
         """
         Removed cached file or all files in cache directory
 
         :param str cache_file:
         :return: bool, if file removed
         """
+        if not func_name:
+            cache_dir = self.output_dir
+        else:
+            cache_dir = os.path.join(self.output_dir, func_name)
         if not cache_file:
             if not self.output_filename:
-                for filename in os.listdir(self.cache_dir):
-                    os.remove(os.path.join(self.cache_dir, filename))
-            cache_file = f'{self.output_dir}/{self.output_filename}'
+                for filename in os.listdir(cache_dir):
+                    os.remove(os.path.join(cache_dir, filename))
+                os.removedirs(cache_dir)
+            cache_file = f'{cache_dir}/{self.output_filename}'
         try:
-            return os.remove(cache_file)
+            os.remove(cache_file)
         except FileNotFoundError:
-            return False
+            pass
 
     def get_args_hash(self, *args, **kwargs):
         """
@@ -146,11 +151,11 @@ class pickle_jar(object):
             arghash = hashlib.md5(argstr.encode('utf-8')).hexdigest()
         return arghash
 
-    def get_output_path(self, args_str):
+    def get_output_path(self, func, args_str):
         # Create result output path
         if not self.output_filename:
             filename = f'results{args_str}.pickle'
-            output_path = f'{self.output_dir}/{filename}'
+            output_path = f'{self.output_dir}/{func.__name__}/{filename}'
         else:
             output_path = f'{self.output_dir}/{self.output_filename}'
 
