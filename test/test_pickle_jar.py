@@ -1,8 +1,6 @@
 from pickle_jar import pickle_jar
 from mock import MagicMock, patch
 from nose.tools import ok_, eq_, raises
-import hashlib
-import os
 
 
 @patch('inspect.getsource')
@@ -41,6 +39,25 @@ class TestPickleJar:
         eq_(res2, 'test')
         func.assert_called_once()
         self.pj.clear_cache()
+
+    @raises(AssertionError)
+    def test_different_args(self, get_source):
+        get_source.return_value = '@test\ntest_source\ntest_source'
+        pj2 = pickle_jar(cache_dir='test/test_jar/', filename=None)
+        pj2.clear_cache()
+        func = MagicMock(return_value='test')
+        func.__name__ = 'func_name_mock'
+        decorated_func = pj2(func)
+
+        res1 = decorated_func('arg1')
+        eq_(res1, 'test')
+
+        func.assert_called_once()
+
+        res2 = decorated_func('arg2')
+        eq_(res2, 'test')
+        func.assert_called_once()
+        pj2.clear_cache()
 
     def tearDown(self):
         self.pj.clear_cache()
